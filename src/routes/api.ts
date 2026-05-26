@@ -74,8 +74,8 @@ export async function registerApiRoutes(app: FastifyInstance, sql: postgres.Sql<
         id: s.id,
         number: s.number,
         title: s.title,
-        date: s.date,
-        startTime: `${s.date}T${s.start_time}:00+02:00`,
+        date: toIsoDate(s.date),
+        startTime: `${toIsoDate(s.date)}T${toHhMm(s.start_time)}:00+02:00`,
         endTime: computeEndTime(s.date, s.start_time, s.duration_min),
         duration: s.duration_min,
         kind: s.kind,
@@ -100,8 +100,8 @@ export async function registerApiRoutes(app: FastifyInstance, sql: postgres.Sql<
           id: t.id,
           number: t.number,
           title: t.title,
-          date: t.date,
-          start: `${t.date}T${t.start_time}:00+02:00`,
+          date: toIsoDate(t.date),
+          start: `${toIsoDate(t.date)}T${toHhMm(t.start_time)}:00+02:00`,
           end: computeEndTime(t.date, t.start_time, t.duration_min),
           duration: t.duration_min,
           abstract: t.abstract,
@@ -114,8 +114,8 @@ export async function registerApiRoutes(app: FastifyInstance, sql: postgres.Sql<
         id: s.id,
         number: s.number,
         title: s.title,
-        date: s.date,
-        start: `${s.date}T${s.start_time}:00+02:00`,
+        date: toIsoDate(s.date),
+        start: `${toIsoDate(s.date)}T${toHhMm(s.start_time)}:00+02:00`,
         end: computeEndTime(s.date, s.start_time, s.duration_min),
         duration: s.duration_min,
         kind: s.kind,
@@ -139,11 +139,31 @@ export async function registerApiRoutes(app: FastifyInstance, sql: postgres.Sql<
   });
 }
 
-function computeEndTime(date: string, time: string, durationMin: number): string {
-  const [hours, minutes] = time.split(':').map(Number);
+function toIsoDate(d: Date | string): string {
+  if (typeof d === 'string') return d;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function toHhMm(time: Date | string): string {
+  if (typeof time === 'string') {
+    // "09:00" or "09:00:00" → "09:00"
+    return time.slice(0, 5);
+  }
+  // Date object from postgres TIME column
+  const h = String(time.getHours()).padStart(2, '0');
+  const m = String(time.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
+}
+
+function computeEndTime(date: Date | string, time: Date | string, durationMin: number): string {
+  const isoDate = toIsoDate(date);
+  const [hours, minutes] = toHhMm(time).split(':').map(Number);
   const totalMinutes = hours * 60 + minutes + durationMin;
   const endHours = Math.floor(totalMinutes / 60);
   const endMinutes = totalMinutes % 60;
   const endTime = `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
-  return `${date}T${endTime}:00+02:00`;
+  return `${isoDate}T${endTime}:00+02:00`;
 }
