@@ -16,13 +16,13 @@ describe('CSV Validator', () => {
         Track: 'main', 'Session Id': 'SES-1', Authors: 'Dr. Smith'
       }],
       authors: [{
-        'Talk id': 'TALK-1', 'Person Id': 'P1', 'First Name': 'John',
-        'Last Name': 'Smith', Country: 'US', Affiliation: 'Uni',
-        Email: 'john@example.com', 'Web page': '', IsPresenter: 'true'
+        'Talk id': 'TALK-1', 'Person Id': 'P1', 'First name': 'John',
+        'Last name': 'Smith', 'Country code': 'US', Affiliation: 'Uni',
+        Email: 'john@example.com', 'Web page': '', 'Presenter?': 'yes'
       }],
       sessionChairs: [{
-        'Session Id': 'SES-1', 'Person Id': 'P1', 'First Name': 'John',
-        'Last Name': 'Smith', Country: 'US', Affiliation: 'Uni',
+        'Session Id': 'SES-1', 'Person Id': 'P1', 'First name': 'John',
+        'Last name': 'Smith', Country: 'US', Affiliation: 'Uni',
         Email: 'john@example.com', 'Web page': ''
       }],
     };
@@ -91,7 +91,7 @@ describe('CSV Validator', () => {
     };
 
     expect(() => validateConferenceData(data)).toThrow(ValidationError);
-    expect(() => validateConferenceData(data)).toThrow('sessions.csv row 2: Duration must be a positive integer');
+    expect(() => validateConferenceData(data)).toThrow('sessions.csv row 2: Duration must be a non-negative integer');
   });
 
   it('should throw on foreign key violation', () => {

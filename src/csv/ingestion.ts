@@ -50,9 +50,9 @@ export async function ingestConferenceData(sql: postgres.Sql<{}>, data: Conferen
         INSERT INTO persons (id, first_name, last_name, country, affiliation, email, web_page)
         VALUES (
           ${person['Person Id']},
-          ${person['First Name']},
-          ${person['Last Name']},
-          ${person.Country || null},
+          ${person['First name']},
+          ${person['Last name']},
+          ${person['Country code'] || person['Country'] || null},
           ${person.Affiliation || null},
           ${person.Email || null},
           ${person['Web page'] || null}
@@ -66,14 +66,14 @@ export async function ingestConferenceData(sql: postgres.Sql<{}>, data: Conferen
         INSERT INTO sessions (id, number, title, date, start_time, duration_min, kind, description, room_id)
         VALUES (
           ${session.Id},
-          ${parseInt(session.Number, 10)},
+          ${session.Number ? parseInt(session.Number, 10) : null},
           ${session.Title},
           ${session.Date},
           ${session['Start time']},
           ${parseInt(session.Duration, 10)},
           ${session.Kind},
           ${session.Description || null},
-          ${session['Room Id']}
+          ${session['Room Id'] || null}
         )
       `;
     }
@@ -100,7 +100,7 @@ export async function ingestConferenceData(sql: postgres.Sql<{}>, data: Conferen
     for (const author of data.authors) {
       await trx`
         INSERT INTO talk_authors (talk_id, person_id, is_presenter)
-        VALUES (${author['Talk id']}, ${author['Person Id']}, ${author.IsPresenter === 'true'})
+        VALUES (${author['Talk id']}, ${author['Person Id']}, ${author['Presenter?'] === 'yes'})
       `;
     }
 

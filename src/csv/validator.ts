@@ -29,11 +29,11 @@ function assertTime(file: string, rowIdx: number, record: Record<string, string>
   return value;
 }
 
-function assertPositiveInt(file: string, rowIdx: number, record: Record<string, string>, field: string): number {
+function assertNonNegativeInt(file: string, rowIdx: number, record: Record<string, string>, field: string): number {
   const value = assertRequired(file, rowIdx, record, field);
   const num = parseInt(value, 10);
-  if (isNaN(num) || num <= 0) {
-    throw new ValidationError(`${file} row ${rowIdx}: ${field} must be a positive integer`);
+  if (isNaN(num) || num < 0) {
+    throw new ValidationError(`${file} row ${rowIdx}: ${field} must be a non-negative integer`);
   }
   return num;
 }
@@ -64,10 +64,10 @@ export function validateConferenceData(data: ConferenceData): void {
     assertRequired('sessions.csv', rowIdx, data.sessions[i], 'Title');
     assertDate('sessions.csv', rowIdx, data.sessions[i], 'Date');
     assertTime('sessions.csv', rowIdx, data.sessions[i], 'Start time');
-    assertPositiveInt('sessions.csv', rowIdx, data.sessions[i], 'Duration');
-    const roomId = assertRequired('sessions.csv', rowIdx, data.sessions[i], 'Room Id');
-    if (!roomIds.has(roomId)) {
-      throw new ValidationError(`sessions.csv row ${rowIdx}: 'Room Id' ${roomId} does not exist in rooms`);
+    assertNonNegativeInt('sessions.csv', rowIdx, data.sessions[i], 'Duration');
+    const roomId = data.sessions[i]['Room Id'];
+    if (roomId && roomId.trim() !== '' && !roomIds.has(roomId.trim())) {
+      throw new ValidationError(`sessions.csv row ${rowIdx}: 'Room Id' ${roomId.trim()} does not exist in rooms`);
     }
     sessionIds.add(id);
   }
@@ -79,7 +79,7 @@ export function validateConferenceData(data: ConferenceData): void {
     assertRequired('talks.csv', rowIdx, data.talks[i], 'Title');
     assertDate('talks.csv', rowIdx, data.talks[i], 'Date');
     assertTime('talks.csv', rowIdx, data.talks[i], 'Start time');
-    assertPositiveInt('talks.csv', rowIdx, data.talks[i], 'Duration');
+    assertNonNegativeInt('talks.csv', rowIdx, data.talks[i], 'Duration');
     const sessionId = assertRequired('talks.csv', rowIdx, data.talks[i], 'Session Id');
     if (!sessionIds.has(sessionId)) {
       throw new ValidationError(`talks.csv row ${rowIdx}: 'Session Id' ${sessionId} does not exist in sessions`);
@@ -91,8 +91,8 @@ export function validateConferenceData(data: ConferenceData): void {
     const rowIdx = i + 2;
     assertRequired('authors.csv', rowIdx, data.authors[i], 'Talk id');
     assertRequired('authors.csv', rowIdx, data.authors[i], 'Person Id');
-    assertRequired('authors.csv', rowIdx, data.authors[i], 'First Name');
-    assertRequired('authors.csv', rowIdx, data.authors[i], 'Last Name');
+    assertRequired('authors.csv', rowIdx, data.authors[i], 'First name');
+    assertRequired('authors.csv', rowIdx, data.authors[i], 'Last name');
   }
 
   // Validate session chairs
@@ -100,7 +100,7 @@ export function validateConferenceData(data: ConferenceData): void {
     const rowIdx = i + 2;
     assertRequired('session_chairs.csv', rowIdx, data.sessionChairs[i], 'Session Id');
     assertRequired('session_chairs.csv', rowIdx, data.sessionChairs[i], 'Person Id');
-    assertRequired('session_chairs.csv', rowIdx, data.sessionChairs[i], 'First Name');
-    assertRequired('session_chairs.csv', rowIdx, data.sessionChairs[i], 'Last Name');
+    assertRequired('session_chairs.csv', rowIdx, data.sessionChairs[i], 'First name');
+    assertRequired('session_chairs.csv', rowIdx, data.sessionChairs[i], 'Last name');
   }
 }

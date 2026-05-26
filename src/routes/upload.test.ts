@@ -21,10 +21,10 @@ SES-1,1,Opening,2026-06-15,09:00,60,plenary,Welcome,ROOM-1,Dr. Smith`));
   zip.addFile('talks.csv', Buffer.from(`Id,Number,Title,Date,Start time,Duration,Abstract,Track,Session Id,Authors
 TALK-1,1,Keynote,2026-06-15,09:00,60,Important talk,main,SES-1,Dr. Smith`));
 
-  zip.addFile('authors.csv', Buffer.from(`Talk id,Person Id,First Name,Last Name,Country,Affiliation,Email,Web page,IsPresenter
-TALK-1,P1,John,Smith,US,Uni,john@example.com,,true`));
+  zip.addFile('authors.csv', Buffer.from(`Talk id,Person Id,First name,Last name,Country code,Affiliation,Email,Web page,Presenter?
+TALK-1,P1,John,Smith,US,Uni,john@example.com,,yes`));
 
-  zip.addFile('session_chairs.csv', Buffer.from(`Session Id,Person Id,First Name,Last Name,Country,Affiliation,Email,Web page
+  zip.addFile('session_chairs.csv', Buffer.from(`Session Id,Person Id,First name,Last name,Country,Affiliation,Email,Web page
 SES-1,P1,John,Smith,US,Uni,john@example.com,`));
 
   return zip.toBuffer();
@@ -84,8 +84,8 @@ describe('POST /admin/upload', () => {
     zip.addFile('csv/rooms.csv', Buffer.from(`Id,Name,Description\nROOM-1,Main Hall,Large auditorium`));
     zip.addFile('csv/sessions.csv', Buffer.from(`Id,Number,Title,Date,Start time,Duration,Kind,Description,Room Id,Chairs\nSES-1,1,Opening,2026-06-15,09:00,60,plenary,Welcome,ROOM-1,Dr. Smith`));
     zip.addFile('csv/talks.csv', Buffer.from(`Id,Number,Title,Date,Start time,Duration,Abstract,Track,Session Id,Authors\nTALK-1,1,Keynote,2026-06-15,09:00,60,Important talk,main,SES-1,Dr. Smith`));
-    zip.addFile('csv/authors.csv', Buffer.from(`Talk id,Person Id,First Name,Last Name,Country,Affiliation,Email,Web page,IsPresenter\nTALK-1,P1,John,Smith,US,Uni,john@example.com,,true`));
-    zip.addFile('csv/session_chairs.csv', Buffer.from(`Session Id,Person Id,First Name,Last Name,Country,Affiliation,Email,Web page\nSES-1,P1,John,Smith,US,Uni,john@example.com,`));
+    zip.addFile('csv/authors.csv', Buffer.from(`Talk id,Person Id,First name,Last name,Country code,Affiliation,Email,Web page,Presenter?\nTALK-1,P1,John,Smith,US,Uni,john@example.com,,yes`));
+    zip.addFile('csv/session_chairs.csv', Buffer.from(`Session Id,Person Id,First name,Last name,Country,Affiliation,Email,Web page\nSES-1,P1,John,Smith,US,Uni,john@example.com,`));
     const zipBuffer = zip.toBuffer();
 
     const boundary = '----FormBoundary' + Math.random().toString(36).substring(2);

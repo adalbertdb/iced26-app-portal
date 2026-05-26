@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS persons (
 
 CREATE TABLE IF NOT EXISTS sessions (
   id TEXT PRIMARY KEY,
-  number INTEGER NOT NULL,
+  number INTEGER,
   title TEXT NOT NULL,
   date DATE NOT NULL,
   start_time TIME NOT NULL,
@@ -32,6 +32,9 @@ CREATE TABLE IF NOT EXISTS sessions (
   description TEXT,
   room_id TEXT REFERENCES rooms(id)
 );
+
+-- Migration: make number nullable if upgrading from earlier schema
+ALTER TABLE sessions ALTER COLUMN number DROP NOT NULL;
 
 CREATE TABLE IF NOT EXISTS talks (
   id TEXT PRIMARY KEY,
