@@ -41,8 +41,14 @@ Admins log in, drag-and-drop a zip file containing the 5 CSVs, the backend valid
 
 3. **CSV Parser & Validator** (`csv/`) — Deep module encapsulating all CSV logic:
    - Unzip uploaded file to `/tmp`, extract 5 CSVs.
+   - **Zip subdirectory handling**: zips exported from macOS Finder often wrap files in a single top-level folder (e.g., `csv/rooms.csv`). The parser searches immediate subdirectories if CSVs are not found at the root.
    - Stream-parse each CSV row.
-   - Strict validation: required fields, date formats (`YYYY-MM-DD`), time formats (`HH:MM`), integer durations, foreign key integrity (e.g., `talks.Session Id` must exist in `sessions.csv`, `sessions.Room Id` must exist in `rooms.csv`), and valid `Person Id` references.
+   - Strict validation: required fields, date formats (`YYYY-MM-DD`), time formats (`HH:MM`), non-negative integer durations, foreign key integrity (e.g., `talks.Session Id` must exist in `sessions.csv`), and valid `Person Id` references.
+   - **Real-data relaxations** discovered during integration:
+     - `sessions.Number` may be empty for non-session rows (breaks, lunches, social events).
+     - `sessions.Room Id` may be empty for breaks/social events that have no assigned room.
+     - `talks.Duration` may be `0` for poster sessions with no assigned time slot.
+     - Actual CSV headers use lowercase with spaces: `First name`, `Last name`, `Country code`, `Presenter?` — not the PascalCase originally assumed.
    - Fail-fast on first invalid row: throw `ValidationError` with file name, row number, field name, and reason.
    - Return structured arrays of parsed objects ready for SQL insertion.
 
@@ -69,7 +75,7 @@ Normalized tables:
 - `users` — `id`, `username` (unique), `password_hash`, `created_at`
 - `rooms` — `id` (PK, from CSV), `name`, `description`
 - `persons` — `id` (PK, from CSV `Person Id`), `first_name`, `last_name`, `country`, `affiliation`, `email`, `web_page`
-- `sessions` — `id` (PK, from CSV), `number`, `title`, `date`, `start_time`, `duration_min`, `kind`, `description`, `room_id` (FK → rooms)
+- `sessions` — `id` (PK, from CSV), `number` (nullable — empty for breaks/lunches), `title`, `date`, `start_time`, `duration_min`, `kind`, `description`, `room_id` (FK → rooms, nullable for breaks/social events)
 - `talks` — `id` (PK, from CSV), `number`, `title`, `date`, `start_time`, `duration_min`, `abstract`, `track`, `session_id` (FK → sessions)
 - `talk_authors` — junction: `talk_id` (FK), `person_id` (FK), `is_presenter` (boolean)
 - `session_chairs` — junction: `session_id` (FK), `person_id` (FK)
@@ -78,7 +84,7 @@ Normalized tables:
 
 - `POST /admin/login` → `{ username, password }` / `{ token }`
 - `POST /admin/upload` → multipart `file` (zip) / `{ success: true, message }` or `{ success: false, error: "talks.csv row 42: 'Start time' must be HH:MM" }`
-- `GET /api/schedule` → `{ rooms: [...], events: [...], sessionBlocks: [...], speakers: [...] }` (shape derived from Flutter app entities)
+- `GET /api/schedule` → `{ rooms: [...], events: [...], sessionBlocks: [...], speakers: [...] }` (shape derived from Flutter app entities). Datetimes are emitted as plain ISO 8601 local strings (`2026-06-23T09:00:00`) — no timezone offset, because the CSV source already contains local Salamanca times.
 
 ### Hosting
 
@@ -86,7 +92,7 @@ Monolithic deploy on Railway/Render. One service, one URL. `Dockerfile` for Fast
 
 ## Testing Decisions
 
-- **CSV Validator** is the most critical deep module and MUST be unit-tested extensively. Test: valid rows pass, each invalid field type fails with correct error message, foreign key violations are caught, multiline HTML abstracts parse correctly, comma-separated author strings are handled.
+- **CSV Validator** is the most critical deep module and MUST be unit-tested extensively. Test: valid rows pass, each invalid field type fails with correct error message, foreign key violations are caught, multiline HTML abstracts parse correctly, comma-separated author strings are handled. Also test that zips with CSVs inside a subdirectory are accepted.
 - **Auth Module** — test JWT sign/verify, bcrypt hashing, and the preHandler middleware rejecting missing/invalid tokens.
 - **Ingestion Service** — test the atomic swap using an in-memory or test Postgres instance. Assert that partial failures roll back and leave previous data intact.
 - **Public API** — test `GET /api/schedule` returns correct JSON shape and includes all expected data after a successful upload.
@@ -124,4 +130,6 @@ Each issue is implemented on a `feat/<issue-number>-<slug>` branch, pushed to Gi
 - `talks.csv` has an `Authors` column that is a human-readable comma-separated string. The canonical author data is in `authors.csv` linked by `Talk id`. The validator should probably ignore the `Authors` string and use the structured `authors.csv` data, or at least cross-check them.
 - `sessions.csv` has a `Chairs` string column and a separate `session_chairs.csv`. Same pattern: use the structured file as the source of truth.
 - Since the same `Person Id` can appear as an author and a chair, the normalized `persons` table deduplicates them naturally.
-- Timezone handling: the CSV dates/times are local to Salamanca, Spain (CEST, UTC+2 during the conference). The API should probably emit ISO 8601 strings with `+02:00` offset to match the current Flutter JSON.
+- Timezone handling: the CSV dates/times are already local to Salamanca, Spain. The API emits plain ISO 8601 strings (e.g., `2026-06-23T09:00:00`) without a timezone offset. The Flutter app should treat these as local times.
+- **Postgres Date object formatting**: `postgres.js` returns `DATE` and `TIME` columns as JavaScript `Date` objects. The API route must format these to strings before JSON serialization to avoid emitting browser-specific `toString()` output.
+- **Server entry point**: `src/server.ts` must delegate to `buildApp()` from `src/app.ts` to ensure all routes (auth, admin, API, static) are registered. Duplicating the app setup in `server.ts` caused the admin and API routes to be silently missing in production.
