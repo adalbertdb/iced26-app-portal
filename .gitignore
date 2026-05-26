@@ -4,3 +4,7 @@ dist/
 *.log
 .agents/
 skills-lock.json
+package-lock.json
+frontend/package-lock.json
+AGENTS.md
+*.zip
