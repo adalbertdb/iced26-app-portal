@@ -1,4 +1,5 @@
 import postgres from 'postgres';
+import { hashPassword } from '../src/auth/password.ts';
 import 'dotenv/config';
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -13,8 +14,7 @@ async function seedAdmin(): Promise<void> {
   const username = process.argv[2] || 'admin';
   const password = process.argv[3] || 'admin';
 
-  // Placeholder - bcrypt will be added in auth module (issue #2)
-  const passwordHash = password;
+  const passwordHash = await hashPassword(password);
 
   await sql`
     INSERT INTO users (username, password_hash)
