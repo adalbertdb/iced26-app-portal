@@ -79,6 +79,38 @@ describe('POST /admin/upload', () => {
     expect(body.message).toContain('Imported');
   });
 
+  it('should upload zip with files inside a subdirectory', async () => {
+    const zip = new AdmZip();
+    zip.addFile('csv/rooms.csv', Buffer.from(`Id,Name,Description\nROOM-1,Main Hall,Large auditorium`));
+    zip.addFile('csv/sessions.csv', Buffer.from(`Id,Number,Title,Date,Start time,Duration,Kind,Description,Room Id,Chairs\nSES-1,1,Opening,2026-06-15,09:00,60,plenary,Welcome,ROOM-1,Dr. Smith`));
+    zip.addFile('csv/talks.csv', Buffer.from(`Id,Number,Title,Date,Start time,Duration,Abstract,Track,Session Id,Authors\nTALK-1,1,Keynote,2026-06-15,09:00,60,Important talk,main,SES-1,Dr. Smith`));
+    zip.addFile('csv/authors.csv', Buffer.from(`Talk id,Person Id,First Name,Last Name,Country,Affiliation,Email,Web page,IsPresenter\nTALK-1,P1,John,Smith,US,Uni,john@example.com,,true`));
+    zip.addFile('csv/session_chairs.csv', Buffer.from(`Session Id,Person Id,First Name,Last Name,Country,Affiliation,Email,Web page\nSES-1,P1,John,Smith,US,Uni,john@example.com,`));
+    const zipBuffer = zip.toBuffer();
+
+    const boundary = '----FormBoundary' + Math.random().toString(36).substring(2);
+    const payload = Buffer.concat([
+      Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="test.zip"\r\nContent-Type: application/zip\r\n\r\n`),
+      zipBuffer,
+      Buffer.from(`\r\n--${boundary}--\r\n`),
+    ]);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/admin/upload',
+      headers: {
+        authorization: `Bearer ${token}`,
+        'content-type': `multipart/form-data; boundary=${boundary}`,
+      },
+      payload,
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.success).toBe(true);
+    expect(body.message).toContain('Imported');
+  });
+
   it('should return 401 without token', async () => {
     const res = await app.inject({
       method: 'POST',

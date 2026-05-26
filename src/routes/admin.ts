@@ -72,9 +72,29 @@ export async function registerAdminRoutes(app: FastifyInstance, sql: postgres.Sq
         const zip = new AdmZip(zipPath);
         zip.extractAllTo(tmpDir, true);
 
+        // Zips from macOS Finder etc. often wrap files in a single top-level folder.
+        // Find the directory that actually contains the CSVs.
+        function findCsvDir(dir: string): string {
+          const required = ['rooms.csv', 'sessions.csv', 'talks.csv', 'authors.csv', 'session_chairs.csv'];
+          if (required.every((f) => fs.existsSync(path.join(dir, f)))) {
+            return dir;
+          }
+          for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            if (entry.isDirectory()) {
+              const sub = path.join(dir, entry.name);
+              if (required.every((f) => fs.existsSync(path.join(sub, f)))) {
+                return sub;
+              }
+            }
+          }
+          return dir;
+        }
+
+        const csvDir = findCsvDir(tmpDir);
+
         // Parse CSVs
         const readCsv = (filename: string) => {
-          const filePath = path.join(tmpDir, filename);
+          const filePath = path.join(csvDir, filename);
           if (!fs.existsSync(filePath)) {
             throw new ValidationError(`Missing file: ${filename}`);
           }
