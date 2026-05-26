@@ -1,14 +1,18 @@
 import fastify from 'fastify';
+import multipart from '@fastify/multipart';
 import postgres from 'postgres';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { registerAdminRoutes } from './routes/admin.ts';
+import { registerApiRoutes } from './routes/api.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export async function buildApp() {
   const app = fastify({ logger: false });
+
+  await app.register(multipart);
 
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
@@ -32,6 +36,7 @@ export async function buildApp() {
   });
 
   await registerAdminRoutes(app, sql);
+  await registerApiRoutes(app, sql);
 
   return app;
 }
