@@ -8,4 +8,10 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
   },
+  server: {
+    proxy: {
+      '/admin': 'http://localhost:3000',
+      '/api': 'http://localhost:3000',
+    },
+  },
 });
