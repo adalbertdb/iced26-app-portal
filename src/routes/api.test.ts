@@ -67,7 +67,7 @@ describe('GET /api/schedule', () => {
     expect(body.rooms[0].name).toBe('Main Hall');
   });
 
-  it('should include timezone offset in dates', async () => {
+  it('should include ISO datetime strings', async () => {
     const res = await app.inject({
       method: 'GET',
       url: '/api/schedule',
@@ -76,6 +76,6 @@ describe('GET /api/schedule', () => {
     const body = JSON.parse(res.payload);
     expect(body.events.length).toBeGreaterThan(0);
     const event = body.events[0];
-    expect(event.start).toContain('+02:00');
+    expect(event.start).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
   });
 });

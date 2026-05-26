@@ -75,7 +75,7 @@ export async function registerApiRoutes(app: FastifyInstance, sql: postgres.Sql<
         number: s.number,
         title: s.title,
         date: toIsoDate(s.date),
-        startTime: `${toIsoDate(s.date)}T${toHhMm(s.start_time)}:00+02:00`,
+        startTime: `${toIsoDate(s.date)}T${toHhMm(s.start_time)}:00`,
         endTime: computeEndTime(s.date, s.start_time, s.duration_min),
         duration: s.duration_min,
         kind: s.kind,
@@ -101,7 +101,7 @@ export async function registerApiRoutes(app: FastifyInstance, sql: postgres.Sql<
           number: t.number,
           title: t.title,
           date: toIsoDate(t.date),
-          start: `${toIsoDate(t.date)}T${toHhMm(t.start_time)}:00+02:00`,
+          start: `${toIsoDate(t.date)}T${toHhMm(t.start_time)}:00`,
           end: computeEndTime(t.date, t.start_time, t.duration_min),
           duration: t.duration_min,
           abstract: t.abstract,
@@ -115,7 +115,7 @@ export async function registerApiRoutes(app: FastifyInstance, sql: postgres.Sql<
         number: s.number,
         title: s.title,
         date: toIsoDate(s.date),
-        start: `${toIsoDate(s.date)}T${toHhMm(s.start_time)}:00+02:00`,
+        start: `${toIsoDate(s.date)}T${toHhMm(s.start_time)}:00`,
         end: computeEndTime(s.date, s.start_time, s.duration_min),
         duration: s.duration_min,
         kind: s.kind,
@@ -165,5 +165,5 @@ function computeEndTime(date: Date | string, time: Date | string, durationMin: n
   const endHours = Math.floor(totalMinutes / 60);
   const endMinutes = totalMinutes % 60;
   const endTime = `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
-  return `${isoDate}T${endTime}:00+02:00`;
+  return `${isoDate}T${endTime}:00`;
 }
